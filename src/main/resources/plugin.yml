@@ -1,0 +1,4 @@
+name: AntiPearlGlitch
+version: '${project.version}'
+main: me.navoei.antipearlglitch.AntiPearlGlitch
+api-version: 1.19

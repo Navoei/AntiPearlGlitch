@@ -1,0 +1,3 @@
+#Config file for AntiPearlGlitch
+
+pearl-glitch-warning-message: "&c[&eAntiPearlGlitch&c] &7%player% attempted to pearl glitch at %coordinates%."
