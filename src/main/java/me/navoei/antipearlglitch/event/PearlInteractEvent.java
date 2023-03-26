@@ -1,8 +1,10 @@
 package me.navoei.antipearlglitch.event;
 
+import me.navoei.antipearlglitch.AntiPearlGlitch;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -13,19 +15,26 @@ import org.bukkit.util.BoundingBox;
 
 public class PearlInteractEvent implements Listener {
 
+    AntiPearlGlitch plugin = AntiPearlGlitch.getInstance();
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPearlTeleport(PlayerTeleportEvent event) {
 
         if (!(event.getCause() == PlayerTeleportEvent.TeleportCause.ENDER_PEARL)) return;
 
+        Player player = event.getPlayer();
+
         Location pearlLandingLocation = event.getTo();
         double patchedPearlYLocation = Math.rint(pearlLandingLocation.getY());
         pearlLandingLocation.setY(patchedPearlYLocation);
+        //Set the initial pearl landing location and check if the player can bypass the checks.
+        event.setTo(pearlLandingLocation);
+        if (player.hasPermission("antipearlglitch.bypass")) return;
         //Create a bounding box with and set it's center at the pearl landing location,
-        Player player = event.getPlayer();
         BoundingBox playerHitBox = player.getBoundingBox();
         //Subtract the original bounding box coordinates to set them to zero. Then add the new bounding box coordinates to match the pearl land location.
         playerHitBox.shift(-playerHitBox.getCenterX()+pearlLandingLocation.getX(), -playerHitBox.getCenterY()+pearlLandingLocation.getY(), -playerHitBox.getCenterZ()+pearlLandingLocation.getZ());
+
 
         Block pearlLandingBlock = pearlLandingLocation.getBlock();
         Block pearlLandingBlockNorth = pearlLandingBlock.getRelative(BlockFace.NORTH);
@@ -82,10 +91,9 @@ public class PearlInteractEvent implements Listener {
                 pearlLandingLocation.setY(pearlLandingLocation.getY()-1.0);
                 return;
             }
-            //Checks are now done, proceed.
+            //Checks are now done, proceed to cancel the event.
 
-            //player.sendMessage("PEARL GLITCH DETECTED AT: " + pearlLandingBlock.getType() + pearlLandingBlock.getLocation());
-            //player.sendMessage("Is this a fence, glass pane, wall, etc?");
+            warnStaff(player, pearlLandingBlock);
 
             //Return the pearl to the player then cancel the event.
             returnPearl(player);
@@ -93,28 +101,27 @@ public class PearlInteractEvent implements Listener {
             return;
         }
         if (playerHitBox.overlaps(blockBoundingBoxNorth) && !pearlLandingBlockNorth.isPassable()) {
-            //player.sendMessage(ChatColor.RED + "PEARL GLITCH DETECTED AT: " + pearlLandingBlockNorth.getType() + pearlLandingBlockNorth.getLocation());
+            warnStaff(player, pearlLandingBlockNorth);
 
             pearlLandingLocation.setZ(pearlLandingBlockNorth.getRelative(BlockFace.SOUTH).getZ()+0.3);
-
         }
         if (playerHitBox.overlaps(blockBoundingBoxSouth) && !pearlLandingBlockSouth.isPassable()) {
-            //player.sendMessage(ChatColor.BLUE + "PEARL GLITCH DETECTED AT: " + pearlLandingBlockSouth.getType() + pearlLandingBlockSouth.getLocation());
+            warnStaff(player, pearlLandingBlockSouth);
 
             pearlLandingLocation.setZ(pearlLandingBlockSouth.getRelative(BlockFace.NORTH).getZ()+0.7);
         }
         if (playerHitBox.overlaps(blockBoundingBoxEast) && !pearlLandingBlockEast.isPassable()) {
-            //player.sendMessage(ChatColor.GREEN + "PEARL GLITCH DETECTED AT: " + pearlLandingBlockEast.getType() + pearlLandingBlockEast.getLocation());
+            warnStaff(player, pearlLandingBlockEast);
 
             pearlLandingLocation.setX(pearlLandingBlockEast.getRelative(BlockFace.WEST).getX()+0.7);
         }
         if (playerHitBox.overlaps(blockBoundingBoxWest) && !pearlLandingBlockWest.isPassable()) {
-            //player.sendMessage(ChatColor.GOLD + "PEARL GLITCH DETECTED AT: " + pearlLandingBlockWest.getType() + pearlLandingBlockWest.getLocation());
+            warnStaff(player, pearlLandingBlockWest);
 
             pearlLandingLocation.setX(pearlLandingBlockWest.getRelative(BlockFace.EAST).getX()+0.3);
         }
 
-        //Teleport the player again after making modifications to the landing location. Also deal damage and have the pearl particle effects.
+        //Set the final teleport location.
         event.setTo(pearlLandingLocation);
     }
 
@@ -122,6 +129,25 @@ public class PearlInteractEvent implements Listener {
         //Return the pearl if in survival or adventure mode.
         if (player.getGameMode().equals(GameMode.ADVENTURE) || player.getGameMode().equals(GameMode.SURVIVAL)) {
             player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
+        }
+    }
+
+    public void warnStaff(Player pearledPlayer, Block pearlGlitchBlock) {
+
+        FileConfiguration config = plugin.getConfig();
+        String message = config.getString("pearl-glitch-notify-message");
+        if (message == null) return;
+
+        String blockX = Integer.toString(pearlGlitchBlock.getX());
+        String blockY = Integer.toString(pearlGlitchBlock.getY());
+        String blockZ = Integer.toString(pearlGlitchBlock.getZ());
+        String coordinates = "x=" + blockX + " y=" + blockY + " z=" + blockZ;
+
+        String messageToPlayer = message.replace("%player%", pearledPlayer.getName()).replace("%block%", pearlGlitchBlock.getType().name()).replace("%coordinates%", coordinates);
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!player.hasPermission("antipearlglitch.notify")) return;
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', messageToPlayer));
         }
     }
 
