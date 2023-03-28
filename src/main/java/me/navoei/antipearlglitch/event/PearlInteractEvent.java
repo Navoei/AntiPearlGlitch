@@ -29,7 +29,6 @@ public class PearlInteractEvent implements Listener {
         pearlLandingLocation.setY(patchedPearlYLocation);
         //Set the initial pearl landing location and check if the player can bypass the checks.
         event.setTo(pearlLandingLocation);
-        if (player.hasPermission("antipearlglitch.bypass")) return;
         //Create a bounding box with and set it's center at the pearl landing location,
         BoundingBox playerHitBox = player.getBoundingBox();
         //Subtract the original bounding box coordinates to set them to zero. Then add the new bounding box coordinates to match the pearl land location.
@@ -121,8 +120,10 @@ public class PearlInteractEvent implements Listener {
             pearlLandingLocation.setX(pearlLandingBlockWest.getRelative(BlockFace.EAST).getX()+0.3);
         }
 
-        //Set the final teleport location.
-        event.setTo(pearlLandingLocation);
+        //Set the final teleport location if the player cannot bypass pearl glitching.
+        if (!player.hasPermission("antipearlglitch.bypasss")) {
+            event.setTo(pearlLandingLocation);
+        }
     }
 
     public void returnPearl(Player player) {
@@ -133,6 +134,8 @@ public class PearlInteractEvent implements Listener {
     }
 
     public void warnStaff(Player pearledPlayer, Block pearlGlitchBlock) {
+
+        if (pearledPlayer.hasPermission("antipearlglitch.bypass")) return;
 
         FileConfiguration config = plugin.getConfig();
         String message = config.getString("pearl-glitch-notify-message");
