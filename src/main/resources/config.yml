@@ -1,3 +1,4 @@
 #Config file for AntiPearlGlitch
 
 pearl-glitch-notify-message: "&c[&eAntiPearlGlitch&c] &7%player% attempted to pearl glitch on %block% at %coordinates%."
+log-pearl-glitch-to-console: true
