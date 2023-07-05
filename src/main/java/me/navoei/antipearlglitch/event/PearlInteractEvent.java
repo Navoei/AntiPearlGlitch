@@ -31,7 +31,7 @@ public class PearlInteractEvent implements Listener {
         pearlLandingLocation.setY(patchedPearlYLocation);
         //Set the initial pearl landing location and check if the player can bypass the checks.
         event.setTo(pearlLandingLocation);
-        if (player.hasPermission("antipearlglitch.bypass")) return;
+
         //Create a bounding box with and set it's center at the pearl landing location,
         BoundingBox playerHitBox = player.getBoundingBox();
         //Subtract the original bounding box coordinates to set them to zero. Then add the new bounding box coordinates to match the pearl land location.
@@ -43,6 +43,16 @@ public class PearlInteractEvent implements Listener {
         Block pearlLandingBlockSouth = pearlLandingBlock.getRelative(BlockFace.SOUTH);
         Block pearlLandingBlockEast = pearlLandingBlock.getRelative(BlockFace.EAST);
         Block pearlLandingBlockWest = pearlLandingBlock.getRelative(BlockFace.WEST);
+
+        //Patch carpets.
+        if (pearlLandingBlock.getType().name().contains("CARPET")) {
+            pearlLandingLocation.setY(pearlLandingLocation.getY() + 0.08);
+            playerHitBox.shift(0.0, 0.08, 0.0);
+        }
+
+        if (player.hasPermission("antipearlglitch.bypass")) return;
+
+        //If the pearl lands somewhere without any blocks adjacent to the landing spot then return.
         if (
                 pearlLandingBlock.getType().isAir() &&
                 pearlLandingBlockNorth.getType().isAir() &&
@@ -50,7 +60,6 @@ public class PearlInteractEvent implements Listener {
                 pearlLandingBlockEast.getType().isAir() &&
                 pearlLandingBlockWest.getType().isAir()
         )  {
-            //If the pearl lands somewhere without any blocks adjacent to the landing spot then return.
             return;
         }
 
@@ -62,13 +71,7 @@ public class PearlInteractEvent implements Listener {
         BoundingBox blockBoundingBoxWest = pearlLandingBlockWest.getBoundingBox();
 
         //Check if the bounding boxes of the blocks under overlap with the bounding box of the player.
-        if (playerHitBox.overlaps(blockBoundingBox) && !pearlLandingBlock.isPassable()) {
-
-            //Patch carpets canceling pearls.
-            if (pearlLandingBlock.getType().name().contains("CARPET")) {
-                pearlLandingLocation.add(0.0, 0.0625, 0.0);
-                playerHitBox.shift(0.0, 0.0625, 0.0);
-            }
+        if (playerHitBox.overlaps(blockBoundingBox) && !pearlLandingBlock.isPassable() && !pearlLandingBlock.getType().name().contains("CARPET")) {
 
             Block pearlLandingBlockDown = pearlLandingBlock.getRelative(BlockFace.DOWN);
             //Get all the blocks relative to the block that's under the pearl landing location.
@@ -103,6 +106,7 @@ public class PearlInteractEvent implements Listener {
                 event.setTo(pearlLandingLocation);
                 return;
             }
+
             //Checks are now done, proceed to cancel the event.
             //Return the pearl to the player then cancel the event.
             returnPearl(player);
@@ -110,22 +114,23 @@ public class PearlInteractEvent implements Listener {
             event.setCancelled(true);
             return;
         }
-        if (playerHitBox.overlaps(blockBoundingBoxNorth) && !pearlLandingBlockNorth.isPassable()) {
+
+        if (playerHitBox.overlaps(blockBoundingBoxNorth) && !pearlLandingBlockNorth.isPassable() && !pearlLandingBlockNorth.getType().name().contains("CARPET")) {
             warnStaff(player, pearlLandingBlockNorth);
 
             pearlLandingLocation.setZ(pearlLandingBlockNorth.getRelative(BlockFace.SOUTH).getZ()+0.3);
         }
-        if (playerHitBox.overlaps(blockBoundingBoxSouth) && !pearlLandingBlockSouth.isPassable()) {
+        if (playerHitBox.overlaps(blockBoundingBoxSouth) && !pearlLandingBlockSouth.isPassable() && !pearlLandingBlockSouth.getType().name().contains("CARPET")) {
             warnStaff(player, pearlLandingBlockSouth);
 
             pearlLandingLocation.setZ(pearlLandingBlockSouth.getRelative(BlockFace.NORTH).getZ()+0.7);
         }
-        if (playerHitBox.overlaps(blockBoundingBoxEast) && !pearlLandingBlockEast.isPassable()) {
+        if (playerHitBox.overlaps(blockBoundingBoxEast) && !pearlLandingBlockEast.isPassable() && !pearlLandingBlockEast.getType().name().contains("CARPET")) {
             warnStaff(player, pearlLandingBlockEast);
 
             pearlLandingLocation.setX(pearlLandingBlockEast.getRelative(BlockFace.WEST).getX()+0.7);
         }
-        if (playerHitBox.overlaps(blockBoundingBoxWest) && !pearlLandingBlockWest.isPassable()) {
+        if (playerHitBox.overlaps(blockBoundingBoxWest) && !pearlLandingBlockWest.isPassable() && !pearlLandingBlockWest.getType().name().contains("CARPET")) {
             warnStaff(player, pearlLandingBlockWest);
 
             pearlLandingLocation.setX(pearlLandingBlockWest.getRelative(BlockFace.EAST).getX()+0.3);
